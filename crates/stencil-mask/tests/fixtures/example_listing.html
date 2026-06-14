@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<body>
+<app-shell>
+  <main>
+    <app-post>
+      <a slot="title" href="/r/synthsub/comments/aaa/">Synthetic title alpha mentions 12345678 directly</a>
+      <span data-author>fake_author_alpha</span>
+      <p class="post-body">Synthetic post body text used as a default-deny target.</p>
+    </app-post>
+    <app-post>
+      <a slot="title" href="/r/synthsub/comments/bbb/">Synthetic title beta also mentions 12345678 directly</a>
+      <span data-author>fake_author_beta</span>
+      <p class="post-body">Another synthetic post body discussing $42.50 and a@b.co.</p>
+    </app-post>
+    <table class="stats">
+      <tr><td class="acct">12345678</td><td class="acct">12345678</td></tr>
+      <tr><td class="bal">$1,234.56</td><td class="other">unrelated cell text</td></tr>
+    </table>
+    <div class="comment">A pretend top-level comment, default-denied.</div>
+  </main>
+</app-shell>
+</body>
+</html>

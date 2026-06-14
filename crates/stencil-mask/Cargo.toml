@@ -1,0 +1,22 @@
+[package]
+name = "stencil-mask"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Layered masking pipeline: redact + slot derivation + describer + lol_html-based apply."
+
+[dependencies]
+stencil-core = { workspace = true }
+serde = { workspace = true }
+regex = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+lol_html = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

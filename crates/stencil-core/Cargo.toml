@@ -1,0 +1,12 @@
+[package]
+name = "stencil-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Pure types for the stencilwright/apiwright suite. No I/O."
+
+[dependencies]
+serde = { workspace = true }
+dirs = { workspace = true }

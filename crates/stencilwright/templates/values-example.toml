@@ -1,0 +1,13 @@
+# values.toml — name → secret-provider reference mapping.
+# Resolved by the daemon through local provider CLIs. References only;
+# no literals.
+# Replace these placeholders via the native secret picker once it is
+# wired up, or by pasting opaque references generated locally.
+
+# example_username = "secret://1password/<vault-id>/<item-id>/username"
+# example_password = "secret://1password/<vault-id>/<item-id>/password"
+
+# If your Example account uses TOTP, uncomment the line below for the
+# bundled `login_otp` place. The trailing `?` marks it as a live OTP
+# resolved via `op item get --otp`.
+# example_totp = "secret://1password/<vault-id>/<item-id>/otp?"

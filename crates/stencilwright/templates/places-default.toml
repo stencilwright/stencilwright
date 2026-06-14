@@ -1,0 +1,41 @@
+# places.toml — graph of recognizable destinations.
+# See specs/01-stencil.md §6 for the format.
+
+target = "<your site name>"
+
+# Add [[place]] entries below. Each declares a recognizable
+# destination with a signature (structured URL + required selector +
+# optional visible selector + optional absent selector + optional text). Per-place
+# [[place.element]] entries name selectors used for auto-fill or
+# unmask opt-in.
+#
+# Example interactive login:
+#
+# [[place]]
+# name = "login"
+# interactive = true
+# submit.click = "button[type='submit']"
+# signature.url = "https://example.com/login"
+# signature.selector = "form[action*='/login']"
+# # Use visible_selector when inactive auth panels stay mounted.
+# # signature.visible_selector = "form[action*='/login']"
+# completion.absent_selector = "form[action*='/login']"
+#
+#   [[place.element]]
+#   name = "username_field"
+#   selector = "input[name='username']"
+#   auto_fill = "{my_username}"
+#
+#   [[place.element]]
+#   name = "password_field"
+#   selector = "input[name='password']"
+#   auto_fill = "{my_password}"
+#
+# Example direct-navigation place:
+#
+# [[place]]
+# name = "home"
+# url = "https://example.com/"
+# signature.url = "https://example.com/"
+# signature.selector = "main"
+# signature.absent_selector = "form[action*='/login']"

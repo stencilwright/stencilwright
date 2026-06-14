@@ -1,0 +1,75 @@
+# mask.toml — site-wide masking policy.
+# See specs/01-stencil.md §4 for the layered redaction pipeline.
+#
+# Default-deny is enforced by stencil-mask outside any redact / unmask
+# scope. The numeric blacklist below runs only as a SUBSTRING scan
+# inside elements opted in via unmasked=true. Always-redact selectors
+# collapse the matched element's text to a single slot regardless.
+
+# --- Numeric blacklist patterns ------------------------------------
+# Each match becomes a slot. Patterns never carry their own placeholder
+# text; the describer pipeline labels each match's shape.
+
+[[mask.pattern]]
+name  = "currency"
+regex = '\$[0-9][0-9,]*(?:\.[0-9]+)?'
+
+[[mask.pattern]]
+name  = "long_digits"
+regex = '[0-9]{8,}'
+
+[[mask.pattern]]
+name  = "email"
+regex = '[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}'
+
+[[mask.pattern]]
+name  = "ipv4"
+regex = '\b(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}\b'
+
+[[mask.pattern]]
+name  = "ipv6"
+regex = '\b(?:[0-9A-Fa-f]{1,4}:){2,7}[0-9A-Fa-f]{1,4}\b'
+
+[[mask.pattern]]
+name  = "datetime"
+regex = '\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+\-]\d{2}:?\d{2})?\b'
+
+[[mask.pattern]]
+name  = "date"
+regex = '\b\d{4}-\d{2}-\d{2}\b'
+
+[[mask.pattern]]
+name  = "time"
+regex = '\b\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?\b'
+
+[[mask.pattern]]
+name  = "phone"
+regex = '\+?\d{1,2}?[\s.\-]?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}'
+
+[[mask.pattern]]
+name  = "uuid"
+regex = '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
+
+[[mask.pattern]]
+name  = "hex_block"
+regex = '\b[0-9A-Fa-f]{16,}\b'
+
+[[mask.pattern]]
+name  = "percent"
+regex = '-?\d+(?:\.\d+)?%'
+
+# --- Always-redact selectors --------------------------------------
+# Elements matching any of these have their entire text content
+# collapsed to a single slot. Used for known-sensitive regions whose
+# contents the regex set might miss. Comma-separated lists are split
+# into individual selectors at load time.
+#
+# Example:
+# [[mask.redact_selectors]]
+# selector = ".js-balance, [data-test='balance']"
+
+# --- Length cap ---------------------------------------------------
+# Unmasked text longer than this collapses to [TEXT:<len>] regardless.
+# Defense against an opted-in element that contains a paragraph of
+# user data.
+max_unmasked_chars = 200

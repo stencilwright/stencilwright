@@ -1,0 +1,33 @@
+[package]
+name = "stencilwright"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Privacy-preserving site mapping harness — the dev binary."
+
+[[bin]]
+name = "stencilwright"
+path = "src/main.rs"
+
+# CRITICAL: do NOT enable the `raw` feature on stencil-browser here.
+# Doing so would compile dump_raw into this binary and breach the
+# crate-level trust boundary.
+[dependencies]
+stencil-core    = { workspace = true }
+stencil-mask    = { workspace = true }
+stencil-browser = { workspace = true, features = ["approval-dialog"] } # raw feature OFF
+stencil-secrets = { workspace = true }
+stencil-places  = { workspace = true }
+tokio  = { workspace = true }
+clap   = { workspace = true }
+anyhow = { workspace = true }
+libc   = { workspace = true }
+toml_edit = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+toml     = { workspace = true }

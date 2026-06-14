@@ -1,0 +1,16 @@
+# values.toml — name → secret-provider reference mapping.
+# Resolved by the daemon through local provider CLIs. References only;
+# no literals.
+#
+# Each entry maps a snake_case name to an opaque provider reference
+# such as secret://1password/<vault-id>/<item-id>/<field>.
+# The resolved value is interpolated into URLs and selectors via
+# {name}, used for auto_fill on form elements, and (when it appears in
+# masked DOM) rendered as [$name <description>] instead of
+# [$<hash> <description>].
+#
+# Example:
+# my_username = "secret://1password/<vault-id>/<item-id>/username"
+# my_password = "secret://1password/<vault-id>/<item-id>/password"
+# # The trailing ? marks this as a live OTP resolved via `op item get --otp`.
+# my_totp     = "secret://1password/<vault-id>/<item-id>/otp?"

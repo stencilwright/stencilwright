@@ -1,0 +1,17 @@
+# elements.toml — site-wide named elements.
+#
+# Implicitly available at every place. Use this for selectors that
+# recur across many places (logout button, global nav, search box).
+# Conflicts on `name` (also defined in a place's [[place.element]])
+# are configuration errors.
+#
+# Example:
+#
+# [[element]]
+# name = "logout_button"
+# selector = "[data-testid='logout-button']"
+# unmasked = true
+#
+# [[element]]
+# name = "global_search"
+# selector = "input[type='search']"

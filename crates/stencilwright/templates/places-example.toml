@@ -1,0 +1,68 @@
+# places.toml — graph of recognizable destinations on example.com.
+# See specs/01-stencil.md §6 for the format.
+
+target = "example"
+description = "Example places: login, home, listing_<name>"
+
+# --- login password (interactive) ---------------------------------
+# Example keeps multiple auth forms in the DOM at the same /login URL
+# and toggles the active step through visibility. This state is the
+# username/password panel, not merely the existence of the form.
+
+[[place]]
+name = "login_password"
+interactive = true
+submit.click = "app-form#login button.login"
+signature.url = "https://www.example.com/login/"
+signature.visible_selector = "app-form#login"
+
+  [[place.element]]
+  name = "username_field"
+  selector = "app-text-input#login-username input"
+  auto_fill = "{example_username}"
+
+  [[place.element]]
+  name = "password_field"
+  selector = "app-text-input#login-password input"
+  auto_fill = "{example_password}"
+
+# --- login TOTP (interactive) -------------------------------------
+# Same URL as the password step, distinct active form.
+
+[[place]]
+name = "login_otp"
+interactive = true
+submit.click = "app-form#login-app-otp button.check-app-code"
+signature.url = "https://www.example.com/login/"
+signature.visible_selector = "app-form#login-app-otp"
+
+  [[place.element]]
+  name = "app_otp_field"
+  selector = "app-text-input#one-time-code-appOtp input"
+  auto_fill = "{example_totp}"
+
+# --- home ---------------------------------------------------------
+# The signed-in landing page.
+
+[[place]]
+name = "home"
+url = "https://www.example.com/"
+signature.url = "https://www.example.com/"
+signature.selector = "app-shell, [data-testid='home-feed']"
+signature.absent_selector = "form[action*='/login']"
+
+# --- listing_main -----------------------------------------------
+# Capture target. Ships with NO unmasked elements so the first dump
+# shows post titles as [TEXT:<len>]. Add unmasking by running:
+#
+#   stencilwright example place listing_main element add \
+#       'a[id^="post-title-"][slot="title"]' --as post_titles --unmasked
+#
+# Each unmask expansion is a deliberate, user-approved step.
+
+[[place]]
+name = "listing_main"
+url = "https://www.example.com/feed/main/"
+signature.url = "https://www.example.com/feed/main/"
+signature.selector = 'app-feed[reload-url*="name=main"]'
+signature.absent_selector = "form[action*='/login']"

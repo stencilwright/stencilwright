@@ -1,0 +1,8 @@
+# site.toml - non-secret per-site settings.
+#
+# Multi-account 1Password users can set an account shorthand/domain
+# here. The daemon passes it to every `op` invocation as --account.
+# Leave unset for single-account setups or when OP_ACCOUNT is already
+# inherited by the daemon process.
+#
+# onepassword_account = "my.1password.com"
