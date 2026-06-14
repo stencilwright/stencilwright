@@ -21,10 +21,11 @@ automate anything in your own name, so long as it isn't surprising.
 - **stencilwright** (this repo) — map a site *with an LLM collaborator* without
   leaking the user's real values into transcripts. Always headed; masking always
   on. Output: `~/.stencilwright/<site>/{places,elements,mask,values}.toml`.
-- **[apiwright](https://github.com/stencilwright/apiwright)** — the **runtime**
-  library. Consumes the maps stencilwright produces and drives the site against
-  raw (unmasked) DOM. Adapters are built on it. The unmasked-DOM `raw` Cargo
-  feature lives only here, in its own workspace — isolated from stencilwright.
+- **apiwright** (`crates/apiwright`) — the **runtime** library. Consumes the
+  maps stencilwright produces and drives the site against raw (unmasked) DOM.
+  Adapters are built on it. It enables `stencil-browser`'s `raw` feature; the
+  stencilwright binary stays raw-free when built with `-p stencilwright`
+  (see [specs/02-apiwright.md](specs/02-apiwright.md)).
 - **adapters** (e.g. [adapter-example](https://github.com/stencilwright/adapter-example))
   — turn one walled-garden web app into an easy local API.
 
@@ -47,6 +48,7 @@ approval dialog the **user** clicks (the agent never sees the raw text). See
 | `stencil-browser` | `playwright-rs` wrapper, session daemon, RPC, masked `Page`. `raw` + `approval-dialog` features |
 | `stencil-secrets` | secret-provider references / discovery (1Password via `op`) |
 | `stencil-places` | place graph, recognition, `place_goto` runner |
+| `apiwright` | the adapter **runtime** lib — drive a mapped site against raw DOM, headed/surfaceable. `raw` ON |
 | `stencilwright` | the dev binary: `init` / `place` / `element` / `page` / `value`. Always headed, `raw` OFF |
 
 ## Quickstart
@@ -64,7 +66,9 @@ Full workflow and artifact formats: [specs/01-stencil.md](specs/01-stencil.md).
 Extracted (copied) from a private monorepo where the harness reached its eighth
 checkpoint: end-to-end Example mapping from a blank profile, masked captures with
 verified zero PII leakage, and the native unmask-approval cycle exercised. The
-`apiwright` runtime is intentionally split into its own repo.
+`apiwright` runtime lives alongside it in `crates/apiwright`; service adapters
+(e.g. [adapter-example](https://github.com/stencilwright/adapter-example)) are
+separate repos.
 
 ## License
 

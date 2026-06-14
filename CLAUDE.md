@@ -29,12 +29,14 @@ architectural changes; also see
 
 ## Repo boundary
 
-This repo is the **mapping** half plus the shared `stencil-*` library crates.
-The **runtime** that drives mapped sites against raw DOM lives in the separate
-[`apiwright`](https://github.com/stencilwright/apiwright) repo, which path-depends
-on these crates as a sibling checkout and enables `stencil-browser`'s `raw`
-feature in its *own* workspace. Keeping `raw` out of this workspace entirely is
-deliberate.
+This repo is **one workspace**: the mapping tool (`stencilwright`), the runtime
+lib (`apiwright`), and the shared `stencil-*` crates. `apiwright` enables
+`stencil-browser`'s `raw` (unmasked-DOM) feature, so `--workspace` builds unify
+`raw` into the shared `stencil-browser`. The trust boundary is held by
+building/testing the dev binary with **`-p stencilwright`** (raw OFF) plus
+[`crates/stencilwright/tests/feature_gate.rs`](crates/stencilwright/tests/feature_gate.rs).
+Service adapters (e.g. adapter-example) are separate repos that depend on
+`apiwright`.
 
 ## Verify
 

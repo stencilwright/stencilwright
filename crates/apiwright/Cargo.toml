@@ -1,0 +1,29 @@
+[package]
+name = "apiwright"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Adapter runtime: drive a stencilwright-mapped site against raw DOM and expose a clean API, with a headed / off-screen-surfaceable, consent-first visibility model."
+
+[lib]
+name = "apiwright"
+path = "src/lib.rs"
+
+# `raw` is enabled HERE — apiwright is the runtime allowed to read unmasked DOM.
+# Because apiwright and stencilwright share this workspace, `cargo build/test
+# --workspace` unifies `raw` into the shared `stencil-browser`. The stencilwright
+# *binary* stays clean when built/tested with `-p stencilwright` (raw off), which
+# the feature-gate test enforces. See crates/stencilwright/tests/feature_gate.rs.
+[dependencies]
+stencil-core    = { workspace = true }
+stencil-browser = { workspace = true, features = ["raw"] }
+stencil-secrets = { workspace = true }
+stencil-places  = { workspace = true }
+
+tokio     = { workspace = true }
+anyhow    = { workspace = true }
+thiserror = { workspace = true }
+tracing   = { workspace = true }
+serde     = { workspace = true }
