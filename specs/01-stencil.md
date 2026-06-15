@@ -189,14 +189,27 @@ matters; later layers operate on the result of earlier layers.
    `[TEXT:<len>]` regardless. Defense against an opted-in `<label>`
    that contains a paragraph of user data.
 
-6. **Attribute values**: attribute values are walked separately.
-   Named values from `values.toml` are replaced with their slot form;
-   numeric/email/etc. blacklist patterns also apply. Known
-   user/account-bearing attributes (`username`, `display-name`,
-   `author-id`, `user-id`, `account-id`, `email`) and
-   `current-user` element attributes are redacted as whole values.
-   Attribute names, tag names, and structural class/id strings remain
-   visible unless their values hit these rules.
+6. **Attribute values** are walked separately, in three tiers:
+
+   - *Identity-bearing* attributes — `username`, `display-name`,
+     `author`, `author-id`, `user-id`, `account-id`, `email`,
+     `post-upvote-ratio`, and **every** attribute of a `current-user`
+     element — always collapse to a single whole-value slot, regardless
+     of scope.
+   - *Content-bearing* attributes carry free, human-readable text — the
+     same kind a text node holds, and just as PII-prone: `aria-label`,
+     `title`, `alt`, `placeholder`, `data-stringify-text`, an
+     `<input>`/`<textarea>`'s `value`, and similar. These follow the
+     **same default-deny ladder as text** (layers 3/4/5 above): masked
+     to `[ATTR:<len>]` by default, or — inside an unmask scope — passed
+     through with the numeric blacklist still applied and the length cap
+     enforced. Without this, content like `aria-label="Jane Doe"` or a
+     `data-stringify-text` display name leaks verbatim.
+   - *Structural* attributes (`class`, `id`, `data-qa`, `href`, `role`,
+     `aria-hidden`, `<option value>`, non-content `data-*`, …) stay
+     legible so selectors can be built against them; only named
+     `values.toml` substrings and numeric/email blacklist matches that
+     appear *inside* them are redacted.
 
 7. **Comments and raw-text containers**: HTML comments and
    `script` / `style` / `template` bodies are collapsed before the DOM
@@ -205,8 +218,10 @@ matters; later layers operate on the result of earlier layers.
    safely inspect.
 
 DOM **structure** is always preserved: tag names, class lists, ids,
-ARIA roles, and non-sensitive data attributes. This is what makes the
-masked output useful for mapping.
+ARIA roles, and structural (non-content) data attributes — this is what
+keeps the masked output useful for mapping. Content-bearing attributes,
+by contrast, are masked like text (layer 6) so structure stays legible
+without content leaking through it.
 
 The asymmetry to internalize: **inputs we *send* are not masked.**
 When the runner does `fill("input#login", "{username}")`, the real
@@ -763,7 +778,10 @@ stencilwright session status <site>   # alive? uptime?
 
 # page — free-form ops on the live tab.
 <site> page goto  <url>                 # raw navigation
-<site> page click <selector>
+<site> page click <selector> [--force]  # --force bypasses actionability checks
+<site> page press <selector> <key>      # one key on a selector (e.g. Enter)
+<site> page type  <selector> <text>     # per-character key events (rich editors)
+<site> page key   <key>                 # key on the focused element (no selector)
 <site> page fill  <selector> <value-or-op-uri>
 <site> page dump
         # mask + dump current live DOM (default policy, no place
@@ -1079,11 +1097,15 @@ financial sites. Northwind is next.
 > See also `specs/field-notes.md` for real-world findings from the
 > CP5 Example capture that informed several of these.
 
-0. **Attribute masking hardening.** Basic attribute masking is now in
-   place: named values and blacklist patterns are replaced inside
-   attribute values, and known user/account-bearing attributes are
-   redacted as whole values. Keep extending the sensitive-attribute
-   list as real sites surface new leak classes. This remains a
+0. **Attribute masking hardening.** Largely landed (§4 layer 6):
+   identity-bearing attributes collapse to a whole-value slot, and
+   *content-bearing* attributes (`aria-label`, `title`, `alt`,
+   `data-stringify-text`, an `<input>`'s `value`, …) now default-deny
+   exactly like text nodes — masked to `[ATTR:<len>]`, with the
+   unmask-scope escape hatch — while structural attributes stay legible.
+   Remaining: keep the content/identity attribute lists current as real
+   sites surface new leak classes (a JSON/network-aware redactor is the
+   next frontier — see the masked-network tracking issue). Still a
    high-scrutiny area before and during financial-site mapping.
 
 0a. **Per-place `unmask_all` opt-in + `--unmask-as <place>`

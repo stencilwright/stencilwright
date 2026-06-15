@@ -33,9 +33,10 @@ automate anything in your own name, so long as it isn't surprising.
 
 An LLM can help develop adapters for authenticated sites *only* if it never sees
 the user's specific real values (account numbers, balances, message contents).
-Every page an assistant ingests is logged. stencilwright masks all text by
-default — structure and labels pass through; specific values become typed,
-length-tagged slots — with per-element opt-in unmasking gated by a native
+Every page an assistant ingests is logged. stencilwright masks all text **and
+content-bearing attributes** by default — page *structure* passes through (tags,
+classes, ids, roles, structural data attributes), while specific values become
+typed, length-tagged slots — with per-element opt-in unmasking gated by a native
 approval dialog the **user** clicks (the agent never sees the raw text). See
 [specs/01-stencil.md](specs/01-stencil.md) for the full trust model.
 
@@ -65,10 +66,13 @@ Full workflow and artifact formats: [specs/01-stencil.md](specs/01-stencil.md).
 
 Extracted (copied) from a private monorepo where the harness reached its eighth
 checkpoint: end-to-end Example mapping from a blank profile, masked captures with
-verified zero PII leakage, and the native unmask-approval cycle exercised. The
-`apiwright` runtime lives alongside it in `crates/apiwright`; service adapters
-(e.g. [adapter-example](https://github.com/stencilwright/adapter-example)) are
-separate repos.
+verified zero PII leakage, and the native unmask-approval cycle exercised.
+
+Since then: the masker was hardened to default-deny **content-bearing
+attributes** (`aria-label`, `title`, `data-stringify-text`, … — a leak class
+found while mapping Acme), and the first real adapter,
+[adapter-example](https://github.com/stencilwright/adapter-example), searches Acme
+end-to-end. Open follow-ups: [issues](https://github.com/stencilwright/stencilwright/issues).
 
 ## License
 

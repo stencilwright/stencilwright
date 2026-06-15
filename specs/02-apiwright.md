@@ -115,13 +115,24 @@ The daemon is the same long-lived, real-Chrome, anti-fresh-launch session
 
 Adapters need more than single-selector reads. apiwright provides (incrementally):
 
-- `extract_text(selector)` — raw text of matching nodes at the current place.
+- `extract_text(selector)` / `extract_attr(selector, attr)` — raw text or a
+  named attribute of matching nodes at the current place.
 - **Structured extraction** over a place's mapped `[[place.element]]` set:
   return a row per repeated container with each named element's value.
 - **List / virtualized collection** helper: scroll a container, collect rows as
   they materialize, dedup by a stable key, and stop on a configurable
   end-of-list signal (no new rows after N scrolls, or an explicit "no results"
-  marker). This is the workhorse for search results, feeds, and tables.
+  marker). The DOM workhorse for search results, feeds, and tables.
+- **Direct in-page API calls** via `evaluate` — when a site's web client is
+  backed by a browser-automation-backed API, an adapter can call that API *from the
+  authenticated page* (`evaluate` → `fetch`, reusing the session cookie + the
+  page's own token) and parse structured JSON instead of reading the DOM. This
+  sidesteps virtualization, pagination, and UI fragility entirely;
+  [`adapter-example`](https://github.com/stencilwright/adapter-example) uses it for
+  search (see its spec §6.4). `dump_raw` + `evaluate` also drive the white-box
+  *discovery* of such an API on a no-PII target — note this is a `raw`-side
+  capability, unavailable under the masked mapping boundary (a masked-network
+  redactor to bring it to PII sites is tracked as a stencilwright issue).
 
 ## 6. Public API (Rust)
 
@@ -139,11 +150,34 @@ impl RuntimeConfig {
 
 pub struct AdapterSession { /* … */ }
 impl AdapterSession {
+    // open: from ~/.stencilwright/<site>, or with an embedded map (standalone)
     pub async fn open(cfg: RuntimeConfig) -> anyhow::Result<Self>;
+    pub async fn open_with_map(cfg: RuntimeConfig, graph: PlaceGraph) -> anyhow::Result<Self>;
+
+    // navigate / recognize
+    pub async fn goto_place(&self, place: &str) -> anyhow::Result<()>; // recognize-first; auto-surface on Login/Captcha
+    pub async fn goto(&self, url: &str) -> anyhow::Result<()>;         // raw navigation
+    pub async fn wait_for(&self, selector: &str, timeout: Duration) -> anyhow::Result<()>;
+    pub fn element_selector(&self, place: &str, name: &str) -> Option<String>; // resolve a mapped selector by name
+    pub fn place_url(&self, place: &str) -> Option<String>;
+
+    // extract (raw DOM)
+    pub async fn extract_text(&self, selector: &str) -> anyhow::Result<Vec<String>>;
+    pub async fn extract_attr(&self, selector: &str, attr: &str) -> anyhow::Result<Vec<String>>;
+    pub async fn dump_raw(&self) -> anyhow::Result<String>;                 // whole unmasked DOM (dev/analysis)
+    pub async fn evaluate(&self, js: &str) -> anyhow::Result<serde_json::Value>; // run JS in-page (e.g. call the site's own API)
+
+    // interact
+    pub async fn click(&self, selector: &str) -> anyhow::Result<()>;
+    pub async fn click_force(&self, selector: &str) -> anyhow::Result<()>; // bypass actionability checks
+    pub async fn fill(&self, selector: &str, value: &str) -> anyhow::Result<()>;
+    pub async fn type_text(&self, selector: &str, text: &str) -> anyhow::Result<()>; // per-char key events (rich editors)
+    pub async fn press(&self, selector: &str, key: &str) -> anyhow::Result<()>;
+    pub async fn key(&self, key: &str) -> anyhow::Result<()>;               // key on the focused element
+
+    // visibility
     pub async fn surface(&self) -> anyhow::Result<()>;
     pub async fn maybe_surface(&self, t: SurfaceTrigger) -> anyhow::Result<bool>;
-    pub async fn goto_place(&self, place: &str) -> anyhow::Result<()>;
-    pub async fn extract_text(&self, selector: &str) -> anyhow::Result<Vec<String>>;
 }
 ```
 
