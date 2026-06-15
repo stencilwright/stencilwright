@@ -317,3 +317,111 @@ fn generated_ratio_attributes_are_redacted_as_whole_values() {
     assert!(out.contains("post-upvote-ratio=\"[$"));
     assert!(!out.contains("100000000"));
 }
+
+#[test]
+fn content_attributes_are_default_denied() {
+    // aria-label / title carry human-readable content → masked like text,
+    // while structural attributes (class, data-qa, id, role) stay legible so
+    // selectors can still be built against them.
+    let html = r#"<button class="c-btn" data-qa="profile" id="b1" role="button" aria-label="Jane Doe" title="Open Jane Doe">Hi</button>"#;
+    let cfg = config_with(vec![], 200);
+    let policy = MaskPolicy::build(&cfg, &[]).unwrap();
+    let place = empty_place("x");
+    let effective = policy.for_place(&place);
+    let out = effective.apply(html, &ValueNameMap::new()).unwrap().0;
+
+    // Content attribute values masked; "Jane Doe" never leaks.
+    assert!(!out.contains("Jane Doe"), "content attribute leaked:\n{out}");
+    assert!(
+        out.contains("aria-label=\"[ATTR:8]\""),
+        "aria-label not default-denied:\n{out}",
+    );
+    assert!(out.contains("[ATTR:"), "no [ATTR:N] markers:\n{out}");
+    // Structural attributes stay legible.
+    assert!(out.contains("class=\"c-btn\""), "class mangled:\n{out}");
+    assert!(out.contains("data-qa=\"profile\""), "data-qa mangled:\n{out}");
+    assert!(out.contains("id=\"b1\""), "id mangled:\n{out}");
+    assert!(out.contains("role=\"button\""), "role mangled:\n{out}");
+}
+
+#[test]
+fn data_stringify_text_attribute_is_masked() {
+    // The exact Acme leak class observed live: a display name riding in
+    // data-stringify-text, which the masker previously passed through verbatim.
+    let html = r#"<span data-qa="sender" data-stringify-text="Daniel Norman">x</span>"#;
+    let cfg = config_with(vec![], 200);
+    let policy = MaskPolicy::build(&cfg, &[]).unwrap();
+    let place = empty_place("x");
+    let effective = policy.for_place(&place);
+    let out = effective.apply(html, &ValueNameMap::new()).unwrap().0;
+
+    assert!(!out.contains("Daniel Norman"), "data-stringify-text leaked:\n{out}");
+    assert!(
+        out.contains("data-stringify-text=\"[ATTR:13]\""),
+        "data-stringify-text not masked:\n{out}",
+    );
+    assert!(
+        out.contains("data-qa=\"sender\""),
+        "structural data-qa should stay legible:\n{out}",
+    );
+}
+
+#[test]
+fn input_value_is_masked_but_option_value_is_structural() {
+    let html =
+        r#"<input value="daniel@example.com"><option value="us">United States</option>"#;
+    let cfg = config_with(vec![], 200);
+    let policy = MaskPolicy::build(&cfg, &[]).unwrap();
+    let place = empty_place("x");
+    let effective = policy.for_place(&place);
+    let out = effective.apply(html, &ValueNameMap::new()).unwrap().0;
+
+    // A typed form-control value is user content → masked.
+    assert!(
+        !out.contains("daniel@example.com"),
+        "input value leaked:\n{out}",
+    );
+    // An <option value> is a structural code → preserved.
+    assert!(
+        out.contains("value=\"us\""),
+        "option value should stay legible:\n{out}",
+    );
+}
+
+#[test]
+fn content_attribute_passes_through_under_unmask_scope() {
+    // An explicitly unmasked element reveals its content attribute, with the
+    // numeric substring blacklist still applied — mirroring text-node unmask.
+    let html = r#"<div class="lbl" aria-label="hello 12345678 world"></div>"#;
+    let cfg = config_with(vec![], 200);
+    let policy = MaskPolicy::build(&cfg, &[]).unwrap();
+    let place = place_with_unmasks("x", &["div.lbl"]);
+    let effective = policy.for_place(&place);
+    let vn = ValueNameMap::new();
+    let out = effective.apply(html, &vn).unwrap().0;
+
+    assert!(out.contains("hello"), "unmasked content-attr prose missing:\n{out}");
+    assert!(out.contains("world"), "unmasked content-attr prose missing:\n{out}");
+    assert!(
+        !out.contains("12345678"),
+        "blacklisted number leaked under content-attr unmask:\n{out}",
+    );
+    assert!(
+        out.contains(&derive_slot("12345678", &vn).render()),
+        "expected numeric slot under unmask:\n{out}",
+    );
+}
+
+#[test]
+fn long_content_attribute_collapses_under_unmask_cap() {
+    let big = "y".repeat(250);
+    let html = format!(r#"<div class="lbl" title="{big}"></div>"#);
+    let cfg = config_with(vec![], 200);
+    let policy = MaskPolicy::build(&cfg, &[]).unwrap();
+    let place = place_with_unmasks("x", &["div.lbl"]);
+    let effective = policy.for_place(&place);
+    let out = effective.apply(&html, &ValueNameMap::new()).unwrap().0;
+
+    assert!(out.contains("title=\"[ATTR:250]\""), "expected [ATTR:250]:\n{out}");
+    assert!(!out.contains(&big), "raw long title leaked under cap");
+}

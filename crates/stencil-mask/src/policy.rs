@@ -131,6 +131,16 @@ impl<'a> EffectivePolicy<'a> {
     ///
     /// Whitespace-only text nodes pass through unchanged so layout is
     /// preserved.
+    ///
+    /// **Attributes.** Identity-bearing attributes (`is_sensitive_attribute`)
+    /// always collapse to one slot. *Content-bearing* attributes
+    /// (`is_content_attribute` — `aria-label`, `title`, `alt`,
+    /// `data-stringify-text`, an `<input>`'s `value`, …) carry the same kind of
+    /// free text a text node does, so they follow the **same** depth-driven
+    /// default-deny ladder (`[ATTR:N]` when masked). Everything else is treated
+    /// as structural (`class`/`id`/`data-qa`/`href`/`role`/…) and stays legible
+    /// so selectors can be built against it — only known real values and
+    /// numeric-blacklist matches inside it are redacted.
     pub fn apply(&self, html: &str, vn: &ValueNameMap) -> Result<MaskedHtml> {
         let html = mask_raw_text_elements(&mask_comments(html));
 
@@ -196,18 +206,36 @@ impl<'a> EffectivePolicy<'a> {
 
         let patterns_attr = self.patterns;
         let vn_attr = vn.clone();
+        let max_unmasked_attr = self.max_unmasked_chars;
+        let st_attr = state.clone();
         let star_attrs: Selector = "*".parse().expect("'*' is a valid lol_html selector");
         let attr_handler =
             ElementContentHandlers::default().element(move |el: &mut HtmlElement<'_, '_>| {
                 let tag_name = el.tag_name();
+                // This handler is registered after the redact/unmask handlers,
+                // so for an element that is itself a scope root its own depth is
+                // already applied here — content attributes on it mask exactly
+                // as its text would.
+                let (redact_depth, unmask_depth) = {
+                    let st = st_attr.borrow();
+                    (st.redact_depth, st.unmask_depth)
+                };
                 let attrs: Vec<(String, String)> = el
                     .attributes()
                     .iter()
                     .map(|attr| (attr.name(), attr.value()))
                     .collect();
                 for (name, value) in attrs {
-                    let masked =
-                        compute_masked_attribute(&tag_name, &name, &value, patterns_attr, &vn_attr);
+                    let masked = compute_masked_attribute(
+                        &tag_name,
+                        &name,
+                        &value,
+                        redact_depth,
+                        unmask_depth,
+                        max_unmasked_attr,
+                        patterns_attr,
+                        &vn_attr,
+                    );
                     if masked != value {
                         el.set_attribute(&name, &masked)
                             .map_err(|e| anyhow!("invalid rewritten attribute '{name}': {e}"))?;
@@ -303,16 +331,42 @@ fn compute_masked_attribute(
     tag_name: &str,
     attr_name: &str,
     value: &str,
+    redact_depth: usize,
+    unmask_depth: usize,
+    max_unmasked_chars: usize,
     patterns: &[CompiledPattern],
     vn: &ValueNameMap,
 ) -> String {
     if value.trim().is_empty() {
         return value.to_string();
     }
+    // Identity-bearing attributes: always one slot, regardless of scope.
     if is_sensitive_attribute(tag_name, attr_name) {
         return derive_slot(value.trim(), vn).render();
     }
+    // Content-bearing attributes carry free, human-readable text (display
+    // names, labels, tooltips, typed input values) — the same kind of content
+    // a text node holds and just as PII-bearing. So they get the *same*
+    // default-deny treatment as text (mirroring `compute_masked_text`): masked
+    // unless the element is in an explicit unmask scope. Without this, content
+    // like `aria-label="Jane Doe"` or `data-stringify-text` leaks verbatim.
+    if is_content_attribute(tag_name, attr_name) {
+        if redact_depth > 0 {
+            return derive_slot(value.trim(), vn).render();
+        }
+        let len = value.chars().count();
+        if unmask_depth > 0 {
+            if len > max_unmasked_chars {
+                return format!("[ATTR:{len}]");
+            }
+            return apply_substring_blacklist(value, patterns, vn);
+        }
+        return format!("[ATTR:{len}]");
+    }
 
+    // Structural attributes (`class`, `id`, `data-qa`, `role`, `href`, …) stay
+    // legible so selectors can be built against them; we only redact known real
+    // values and numeric-blacklist matches that happen to appear inside.
     let mut replacements: Vec<(&str, String)> = vn
         .entries()
         .filter(|(real, _)| !real.is_empty() && value.contains(real))
@@ -342,6 +396,39 @@ fn is_sensitive_attribute(tag_name: &str, attr_name: &str) -> bool {
             | "email"
             | "post-upvote-ratio"
     )
+}
+
+/// Attributes whose values carry free, human-readable text rather than page
+/// structure. These leak content the way text nodes would, so they are
+/// default-denied (see [`compute_masked_attribute`]). Kept deliberately
+/// separate from structural attributes (`class`/`id`/`data-qa`/`href`/`role`/
+/// `aria-hidden`/…), which must stay legible to build selectors against.
+///
+/// Discovered live: Acme carries display names in `data-stringify-text` and
+/// substantive content in `aria-label` — on a financial site the same classes
+/// would carry balances, account numbers, and names. Hardened before any such
+/// mapping (see HANDOFF "masker leak classes").
+fn is_content_attribute(tag_name: &str, attr_name: &str) -> bool {
+    if matches!(
+        attr_name,
+        "title"
+            | "alt"
+            | "placeholder"
+            | "label"
+            | "aria-label"
+            | "aria-description"
+            | "aria-roledescription"
+            | "aria-placeholder"
+            | "aria-valuetext"
+            | "data-stringify-text"
+            | "data-tooltip"
+            | "data-original-title"
+    ) {
+        return true;
+    }
+    // A form control's `value` is user-entered content (a typed name, email,
+    // or account number) — unlike `<option value>`, which is a structural code.
+    attr_name == "value" && matches!(tag_name, "input" | "textarea")
 }
 
 fn compute_masked_text(
