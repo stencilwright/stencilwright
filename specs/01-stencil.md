@@ -3,8 +3,7 @@
 Status: **draft**, ready to implement.
 
 `stencilwright` is the foundational tooling built *before* any adapter.
-Production adapters (`apiwright`-shaped binaries like
-`adapterkit-example`) consume the mapping artifacts `stencilwright` produces
+Production adapters (`apiwright`-shaped binaries) consume the mapping artifacts `stencilwright` produces
 and then go against raw DOM directly — they never touch the masking
 layer.
 
@@ -29,7 +28,7 @@ session is a set of reusable artifacts under
   interpolation
 
 `places.toml`, `elements.toml`, `mask.toml`, and `values.toml` are
-the **mapping**. Production adapter crates (`adapterkit-<provider>`)
+the **mapping**. Production adapter crates
 consume them and produce structured data without ever invoking the
 masking layer.
 
@@ -59,7 +58,7 @@ production adapters later consume.
   long-lived session daemon on top of `playwright-rs`. Use
   `playwright-rs` or `chromiumoxide` directly if that's what you want.
 - **Not a stealth / anti-bot framework.** Sites with aggressive
-  detection (Northwind, Northwind) need stealth measures we'll add as a
+  detection need stealth measures we'll add as a
   separate concern, composed with stencilwright rather than baked in.
   Stencilwright's long-lived session model + `channel = "chrome"`
   defeats the cheapest fresh-launch fingerprints; TLS/JA3,
@@ -637,7 +636,7 @@ impl Page {
 
     /// Library-only; behind #[cfg(feature = "raw")]. Used by apiwright,
     /// the daemon's approval-snippet RPC handler, and downstream
-    /// `adapterkit-<provider>` crates.
+    /// the downstream adapter crates.
     #[cfg(feature = "raw")]
     pub async fn dump_raw(&self, _: RawAccess) -> Result<RawHtml>;
     #[cfg(feature = "raw")]
@@ -997,7 +996,7 @@ caller shell auth state is not silently reused.
 8. Repeat 5–7 until the place set covers what's needed.
 
 9. The user (not the assistant) runs the downstream adapter crate
-   (e.g., cargo run -p adapterkit-example) once to verify it returns
+   (e.g., cargo run -p the-adapter) once to verify it returns
    sensible real data via Page::dump_raw. Agent never executes that
    binary.
 ```
@@ -1088,8 +1087,7 @@ Acceptance criteria — all must hold:
    slot hashes for unnamed values may or may not match — we don't
    persist.)
 
-When all seven hold, stencilwright is ready to point at adapterkit's
-financial sites. Northwind is next.
+When all seven hold, stencilwright is ready for higher-stakes (e.g. financial) sites.
 
 ## 11. Open questions / deferred
 
