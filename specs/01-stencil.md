@@ -299,7 +299,7 @@ adapterkit/
 │   ├── stencil-secrets/        1Password CLI shell-out, value resolution
 │   ├── stencil-places/         load mapping artifacts, recognize, recover, place_goto
 │   ├── stencilwright/          dev binary. Depends on stencil-places (stencil-browser
-│   │                           WITHOUT raw feature). Always headed. Masking always on.
+│   │                           WITHOUT raw feature). Always headed. Masked by default.
 │   └── apiwright/           runtime binary. Depends on stencil-browser WITH raw
 │                               feature, stencil-places, stencil-secrets. Configurable
 │                               headed/headless. No masking. (Stub in v1.)
