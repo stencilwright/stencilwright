@@ -61,6 +61,38 @@ impl Page {
         Ok(())
     }
 
+    /// Click bypassing Playwright actionability checks (visible / stable /
+    /// receives-events). For controls that are present but fail the default
+    /// checks — e.g. Acme's IA4 top-nav search button.
+    pub async fn click_force(&self, selector: &str) -> Result<()> {
+        self.rpc("click", json!({ "selector": selector, "force": true }))
+            .await?;
+        Ok(())
+    }
+
+    /// Press a single key on `selector` (e.g. `"Enter"` to submit a search).
+    pub async fn press(&self, selector: &str, key: &str) -> Result<()> {
+        self.rpc("press", json!({ "selector": selector, "key": key }))
+            .await?;
+        Ok(())
+    }
+
+    /// Type `text` into `selector` with real per-character key events. For
+    /// rich editors that ignore `fill` (Acme's Quill-based inputs).
+    pub async fn type_text(&self, selector: &str, text: &str) -> Result<()> {
+        self.rpc("type", json!({ "selector": selector, "text": text }))
+            .await?;
+        Ok(())
+    }
+
+    /// Press a key on the page's currently focused element (e.g. `"Enter"` to
+    /// submit a focused but hard-to-select search box). Unlike [`Self::press`],
+    /// this does not take a selector, so it won't move focus.
+    pub async fn key(&self, key: &str) -> Result<()> {
+        self.rpc("key", json!({ "key": key })).await?;
+        Ok(())
+    }
+
     pub async fn fill(&self, selector: &str, value: &str) -> Result<()> {
         self.rpc("fill", json!({ "selector": selector, "value": value }))
             .await?;
@@ -188,6 +220,26 @@ impl Page {
             .rpc("selector_text_raw", json!({ "selector": selector }))
             .await?;
         serde_json::from_value(v).context("parse selector_text_raw response")
+    }
+
+    /// **Library-only**, behind the `raw` feature: the value of `attr` on every
+    /// element matching `selector`, in document order (missing → empty string).
+    /// Used for data carried in attributes rather than text — e.g. a result
+    /// row's permalink `href`.
+    #[cfg(feature = "raw")]
+    pub async fn selector_attr_raw(
+        &self,
+        _: RawAccess,
+        selector: &str,
+        attr: &str,
+    ) -> Result<Vec<String>> {
+        let v = self
+            .rpc(
+                "selector_attr_raw",
+                json!({ "selector": selector, "attr": attr }),
+            )
+            .await?;
+        serde_json::from_value(v).context("parse selector_attr_raw response")
     }
 
     /// Fetch raw snippets and show the in-process approval dialog.

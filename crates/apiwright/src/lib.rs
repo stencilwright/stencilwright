@@ -29,8 +29,10 @@ pub use stencil_core;
 pub use stencil_places;
 pub use stencil_secrets;
 
+pub mod daemon;
 pub mod session;
 pub mod visibility;
 
+pub use daemon::run_if_daemon;
 pub use session::{AdapterSession, RuntimeConfig};
 pub use visibility::{SurfacePolicy, SurfaceTrigger, Visibility};

@@ -67,6 +67,34 @@ impl PlaceGraph {
         })
     }
 
+    /// Build a graph from in-memory TOML instead of a site directory — for a
+    /// standalone adapter that ships its map via `include_str!`. `None` for any
+    /// document means "use defaults", matching a missing file in [`Self::from_dir`].
+    pub fn from_toml_strs(
+        places: Option<&str>,
+        elements: Option<&str>,
+        mask: Option<&str>,
+        values: Option<&str>,
+    ) -> Result<Self> {
+        let places = parse_toml::<PlacesDoc>(places, "places.toml")?
+            .map(|d| d.places)
+            .unwrap_or_default();
+        let site_elements = parse_toml::<ElementsDoc>(elements, "elements.toml")?
+            .map(|d| d.elements)
+            .unwrap_or_default();
+        let mask_config = parse_toml::<MaskConfig>(mask, "mask.toml")?.unwrap_or_default();
+        let values = parse_toml::<ValuesConfig>(values, "values.toml")?.unwrap_or_default();
+
+        validate(&places, &site_elements)?;
+
+        Ok(Self {
+            places,
+            site_elements,
+            mask_config,
+            values,
+        })
+    }
+
     pub fn place(&self, name: &str) -> Option<&Place> {
         self.places.iter().find(|p| p.name == name)
     }
@@ -93,8 +121,16 @@ fn load_toml<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<Option<T>> {
         return Ok(None);
     }
     let raw = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-    let parsed = toml::from_str(&raw).with_context(|| format!("parsing {}", path.display()))?;
-    Ok(Some(parsed))
+    parse_toml(Some(&raw), &path.display().to_string())
+}
+
+fn parse_toml<T: for<'de> Deserialize<'de>>(raw: Option<&str>, what: &str) -> Result<Option<T>> {
+    match raw {
+        None => Ok(None),
+        Some(s) => Ok(Some(
+            toml::from_str(s).with_context(|| format!("parsing {what}"))?,
+        )),
+    }
 }
 
 fn validate(places: &[Place], site_elements: &[Element]) -> Result<()> {

@@ -260,8 +260,11 @@ fn shell_quote(value: &str) -> String {
 async fn dispatch_page(site: &str, op: PageCommand) -> Result<()> {
     match op {
         PageCommand::Goto { url } => page_cmd::goto(site, &url).await,
-        PageCommand::Click { selector } => page_cmd::click(site, &selector).await,
+        PageCommand::Click { selector, force } => page_cmd::click(site, &selector, force).await,
         PageCommand::Fill { selector, value } => page_cmd::fill(site, &selector, &value).await,
+        PageCommand::Press { selector, key } => page_cmd::press(site, &selector, &key).await,
+        PageCommand::Type { selector, text } => page_cmd::type_text(site, &selector, &text).await,
+        PageCommand::Key { key } => page_cmd::key(site, &key).await,
         PageCommand::Dump => page_cmd::dump(site, &std::env::current_dir()?).await,
     }
 }

@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use playwright_rs::protocol::page::Page as PwPage;
+use playwright_rs::protocol::ClickOptions;
 use playwright_rs::protocol::wait_for::WaitForOptions;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -65,12 +66,39 @@ async fn dispatch_op(state: &DaemonState, op: &str, args: Value) -> Result<Value
             Ok(Value::Null)
         }
         "click" => {
-            let SelectorArgs { selector } = parse_args(args)?;
+            let ClickArgs { selector, force } = parse_args(args)?;
+            let opts = force.then(|| ClickOptions::builder().force(true).build());
             page.locator(&selector)
                 .await
-                .click(None)
+                .click(opts)
                 .await
                 .context("locator.click")?;
+            Ok(Value::Null)
+        }
+        "press" => {
+            let PressArgs { selector, key } = parse_args(args)?;
+            page.locator(&selector)
+                .await
+                .press(&key, None)
+                .await
+                .context("locator.press")?;
+            Ok(Value::Null)
+        }
+        "type" => {
+            let TypeArgs { selector, text } = parse_args(args)?;
+            page.locator(&selector)
+                .await
+                .press_sequentially(&text, None)
+                .await
+                .context("locator.press_sequentially")?;
+            Ok(Value::Null)
+        }
+        "key" => {
+            let KeyArgs { key } = parse_args(args)?;
+            page.keyboard()
+                .press(&key, None)
+                .await
+                .context("keyboard.press")?;
             Ok(Value::Null)
         }
         "fill" => {
@@ -195,6 +223,21 @@ async fn dispatch_op(state: &DaemonState, op: &str, args: Value) -> Result<Value
             let snippets = selector_text(page, &selector).await?;
             serde_json::to_value(snippets).context("serialize selector_text_raw response")
         }
+        "selector_attr_raw" => {
+            let SelectorAttrArgs { selector, attr } = parse_args(args)?;
+            let locator = page.locator(&selector).await;
+            let count = locator.count().await.context("locator.count")?;
+            let mut out: Vec<String> = Vec::with_capacity(count);
+            for i in 0..count {
+                let v = locator
+                    .nth(i as i32)
+                    .get_attribute(&attr)
+                    .await
+                    .context("locator.get_attribute")?;
+                out.push(v.unwrap_or_default());
+            }
+            serde_json::to_value(out).context("serialize selector_attr_raw response")
+        }
         "request_unmask_approval" => {
             let ApprovalArgs {
                 mut context,
@@ -273,6 +316,12 @@ struct SelectorArgs {
 }
 
 #[derive(Deserialize)]
+struct SelectorAttrArgs {
+    selector: String,
+    attr: String,
+}
+
+#[derive(Deserialize)]
 struct ApprovalArgs {
     context: UnmaskApprovalContext,
     selector: String,
@@ -283,6 +332,30 @@ struct ApprovalArgs {
 struct FillArgs {
     selector: String,
     value: String,
+}
+
+#[derive(Deserialize)]
+struct ClickArgs {
+    selector: String,
+    #[serde(default)]
+    force: bool,
+}
+
+#[derive(Deserialize)]
+struct PressArgs {
+    selector: String,
+    key: String,
+}
+
+#[derive(Deserialize)]
+struct TypeArgs {
+    selector: String,
+    text: String,
+}
+
+#[derive(Deserialize)]
+struct KeyArgs {
+    key: String,
 }
 
 #[derive(Deserialize)]

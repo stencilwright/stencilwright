@@ -223,9 +223,33 @@ pub(crate) struct ElementAddArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum PageCommand {
-    Goto { url: String },
-    Click { selector: String },
-    Fill { selector: String, value: String },
+    Goto {
+        url: String,
+    },
+    Click {
+        selector: String,
+        /// Bypass actionability checks (for present-but-unclickable controls).
+        #[arg(long)]
+        force: bool,
+    },
+    Fill {
+        selector: String,
+        value: String,
+    },
+    /// Press a single key (e.g. Enter) on a selector.
+    Press {
+        selector: String,
+        key: String,
+    },
+    /// Type text with real per-character key events (rich editors).
+    Type {
+        selector: String,
+        text: String,
+    },
+    /// Press a key on the page's focused element (e.g. Enter), no selector.
+    Key {
+        key: String,
+    },
     Dump,
 }
 

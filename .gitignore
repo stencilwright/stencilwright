@@ -3,3 +3,6 @@
 .DS_Store
 .env
 .env.*
+
+# `stencilwright <site> page dump` writes this to the cwd.
+_page.html

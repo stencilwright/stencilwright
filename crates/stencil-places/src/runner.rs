@@ -379,11 +379,12 @@ async fn wait_until_left(
     }
 }
 
-/// User-facing line printed to stdout, flushed immediately so it
-/// streams through pipes (`tail`, `tee`) without buffering surprise.
+/// User-facing progress line, written to **stderr** (flushed immediately) so it
+/// streams through pipes without corrupting a library consumer's structured
+/// stdout — an adapter emitting JSON on stdout must stay clean.
 fn ui(line: String) {
-    println!("{line}");
-    let _ = io::stdout().flush();
+    eprintln!("{line}");
+    let _ = io::stderr().flush();
 }
 
 /// Last-resort stdin Enter for places that lack a completion

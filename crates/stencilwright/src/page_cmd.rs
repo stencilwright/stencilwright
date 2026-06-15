@@ -14,10 +14,35 @@ pub(crate) async fn goto(site: &str, url: &str) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn click(site: &str, selector: &str) -> Result<()> {
+pub(crate) async fn click(site: &str, selector: &str, force: bool) -> Result<()> {
     let session = browser::attach(site).await?;
-    session.page().click(selector).await?;
-    println!("clicked '{selector}'");
+    if force {
+        session.page().click_force(selector).await?;
+    } else {
+        session.page().click(selector).await?;
+    }
+    println!("clicked '{selector}'{}", if force { " (forced)" } else { "" });
+    Ok(())
+}
+
+pub(crate) async fn press(site: &str, selector: &str, key: &str) -> Result<()> {
+    let session = browser::attach(site).await?;
+    session.page().press(selector, key).await?;
+    println!("pressed '{key}' on '{selector}'");
+    Ok(())
+}
+
+pub(crate) async fn type_text(site: &str, selector: &str, text: &str) -> Result<()> {
+    let session = browser::attach(site).await?;
+    session.page().type_text(selector, text).await?;
+    println!("typed into '{selector}'");
+    Ok(())
+}
+
+pub(crate) async fn key(site: &str, key: &str) -> Result<()> {
+    let session = browser::attach(site).await?;
+    session.page().key(key).await?;
+    println!("pressed '{key}'");
     Ok(())
 }
 
