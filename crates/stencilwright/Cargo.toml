@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "Privacy-preserving site mapping harness — the dev binary."
+description = "Privacy-preserving structure mapping harness — the dev binary."
 
 [[bin]]
 name = "stencilwright"
