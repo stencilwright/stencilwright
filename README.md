@@ -19,8 +19,9 @@ automate anything in your own name, so long as it isn't surprising.
 ```
 
 - **stencilwright** (this repo) — map a site *with an LLM collaborator* without
-  leaking the user's real values into transcripts. Always headed; masking always
-  on. Output: `~/.stencilwright/<site>/{places,elements,mask,values}.toml`.
+  leaking the user's real values into transcripts. Always headed; masked by
+  default, with selective per-element unmasking gated by the user's consent.
+  Output: `~/.stencilwright/<site>/{places,elements,mask,values}.toml`.
 - **apiwright** (`crates/apiwright`) — the **runtime** library. Consumes the
   maps stencilwright produces and drives the site against raw (unmasked) DOM.
   Adapters are built on it. It enables `stencil-browser`'s `raw` feature; the
