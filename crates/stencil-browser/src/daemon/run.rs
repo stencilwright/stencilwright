@@ -52,6 +52,12 @@ pub async fn run(site_dir: PathBuf) -> Result<()> {
     let opts = BrowserContextOptions::builder()
         .channel("chrome".into())
         .headless(false)
+        // Keep Chrome's process sandbox ON. Playwright defaults chromium_sandbox
+        // to false, which injects `--no-sandbox` and its "Stability and security
+        // will suffer" infobar. We drive your real authenticated sessions on the
+        // desktop, where the sandbox works and is exactly what should be
+        // isolating page renderers — so we opt back in.
+        .chromium_sandbox(true)
         .ignore_default_args(IgnoreDefaultArgs::Array(vec!["--enable-automation".into()]))
         .build();
 
