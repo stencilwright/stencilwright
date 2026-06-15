@@ -286,7 +286,7 @@ the next `stencilwright place goto`.
 ### Crate layout
 
 ```
-adapterkit/
+example-adapter/
 ├── Cargo.toml                  (workspace)
 ├── crates/
 │   ├── stencil-core/           types only (Place, Element, Signature, MaskPolicy data, Slot, …)
