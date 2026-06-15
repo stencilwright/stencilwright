@@ -10,12 +10,12 @@ whose mission is simple: **freedom of automation** — you should be able to
 automate anything in your own name, so long as it isn't surprising.
 
 ```
- stencilwright            apiwright                 *-adapter
+ stencilwright            apiwright                 adapter
  (this repo)              (runtime lib)             (one per service)
  ───────────────         ───────────────           ───────────────
  map a site, masked,     consume the map,          ergonomic API over
  collaboratively  ─────▶ drive raw DOM,     ─────▶ a web app you
- (LLM-safe)              headed/surfaceable        already use (e.g. Acme)
+ (LLM-safe)              headed/surfaceable        already use
 ```
 
 - **stencilwright** (this repo) — map a site *with an LLM collaborator* without
@@ -26,8 +26,8 @@ automate anything in your own name, so long as it isn't surprising.
   Adapters are built on it. It enables `stencil-browser`'s `raw` feature; the
   stencilwright binary stays raw-free when built with `-p stencilwright`
   (see [specs/02-apiwright.md](specs/02-apiwright.md)).
-- **adapters** (e.g. [adapter-example](https://github.com/stencilwright/adapter-example))
-  — turn one web app you already use into a clean, browser-automation-backed API.
+- **adapters** — one per service, each in its own repo; an adapter turns a web
+  app you already use into a clean, browser-automation-backed API.
 
 ## Why a separate mapping tool?
 
@@ -64,12 +64,11 @@ Full workflow and artifact formats: [specs/01-stencil.md](specs/01-stencil.md).
 
 ## Status
 
-Example maps end-to-end from a blank profile — masked captures with verified zero
-PII leakage, and the native unmask-approval cycle exercised. Since then the
-masker was hardened to default-deny **content-bearing attributes** (`aria-label`,
-`title`, `data-stringify-text`, … — a leak class found while mapping Acme), and
-the first adapter, [adapter-example](https://github.com/stencilwright/adapter-example),
-works end-to-end. Open follow-ups: [issues](https://github.com/stencilwright/stencilwright/issues).
+Maps authenticated sites end-to-end from a blank profile — masked captures with
+verified zero PII leakage, and the native unmask-approval cycle exercised. The
+masker default-denies text **and content-bearing attributes** (`aria-label`,
+`title`, `data-stringify-text`, …). Open follow-ups:
+[issues](https://github.com/stencilwright/stencilwright/issues).
 
 ## License
 

@@ -35,7 +35,7 @@ lib (`apiwright`), and the shared `stencil-*` crates. `apiwright` enables
 `raw` into the shared `stencil-browser`. The trust boundary is held by
 building/testing the dev binary with **`-p stencilwright`** (raw OFF) plus
 [`crates/stencilwright/tests/feature_gate.rs`](crates/stencilwright/tests/feature_gate.rs).
-Service adapters (e.g. adapter-example) are separate repos that depend on
+Service adapters are separate repos that depend on
 `apiwright`.
 
 ## Verify

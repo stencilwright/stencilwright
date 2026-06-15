@@ -3,8 +3,7 @@
 Status: **draft**, skeleton in place.
 
 Companion to [`01-stencil.md`](01-stencil.md) (the mapping harness, same repo)
-and to the service adapters (separate repos, e.g.
-[`adapter-example`](https://github.com/stencilwright/adapter-example)).
+and to the service adapters (separate repos, one per service).
 
 `apiwright` is a crate in this monorepo (`crates/apiwright`).
 
@@ -127,9 +126,8 @@ Adapters need more than single-selector reads. apiwright provides (incrementally
   authenticated page* (`evaluate` → `fetch`, reusing the session cookie + the
   page's own token) and parse structured JSON instead of reading the DOM — this
   is what makes an adapter a clean *browser-automation-backed API*. It sidesteps
-  virtualization, pagination, and UI fragility entirely;
-  [`adapter-example`](https://github.com/stencilwright/adapter-example) uses it for
-  search (its spec §6.4). `dump_raw` + `evaluate` also drive the white-box
+  virtualization, pagination, and UI fragility entirely. `dump_raw` + `evaluate`
+  also drive the white-box
   *discovery* of those calls on a no-PII target — a `raw`-side
   capability, unavailable under the masked mapping boundary (a masked-network
   redactor to bring it to PII sites is tracked as a stencilwright issue).
