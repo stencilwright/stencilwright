@@ -1,4 +1,4 @@
-# 01 — `stencilwright`: privacy-preserving web mapping harness
+# 01 — `stencilwright`: privacy-preserving structure mapping
 
 Status: **draft**, ready to implement.
 

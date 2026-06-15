@@ -16,9 +16,8 @@ real browser against raw DOM, recognize where you are, navigate to mapped
 places, and extract structured data — all under a visibility model that keeps
 the user aware and in control.
 
-apiwright is what `apiwright` was always meant to be in the original
-monorepo: "really a core library for the adapters." It was renamed because that
-is its job — it lets you *wright* a local **API** out of a web app.
+apiwright is the core library every adapter shares — it lets you *wright* a
+clean, browser-automation-backed local **API** out of a web app you already use.
 
 ## 2. Relationship to stencilwright
 
@@ -123,14 +122,15 @@ Adapters need more than single-selector reads. apiwright provides (incrementally
   they materialize, dedup by a stable key, and stop on a configurable
   end-of-list signal (no new rows after N scrolls, or an explicit "no results"
   marker). The DOM workhorse for search results, feeds, and tables.
-- **Direct in-page API calls** via `evaluate` — when a site's web client is
-  backed by a browser-automation-backed API, an adapter can call that API *from the
+- **In-page JSON calls** via `evaluate` — many web clients drive their UI by
+  calling their own JSON endpoints. An adapter can replay those calls *from the
   authenticated page* (`evaluate` → `fetch`, reusing the session cookie + the
-  page's own token) and parse structured JSON instead of reading the DOM. This
-  sidesteps virtualization, pagination, and UI fragility entirely;
+  page's own token) and parse structured JSON instead of reading the DOM — this
+  is what makes an adapter a clean *browser-automation-backed API*. It sidesteps
+  virtualization, pagination, and UI fragility entirely;
   [`adapter-example`](https://github.com/stencilwright/adapter-example) uses it for
-  search (see its spec §6.4). `dump_raw` + `evaluate` also drive the white-box
-  *discovery* of such an API on a no-PII target — note this is a `raw`-side
+  search (its spec §6.4). `dump_raw` + `evaluate` also drive the white-box
+  *discovery* of those calls on a no-PII target — a `raw`-side
   capability, unavailable under the masked mapping boundary (a masked-network
   redactor to bring it to PII sites is tracked as a stencilwright issue).
 

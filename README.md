@@ -1,6 +1,6 @@
 # stencilwright
 
-**Privacy-preserving web-mapping harness.** Drive an authenticated web app in a
+**Privacy-preserving structure mapping.** Drive an authenticated web app in a
 real browser, capture its DOM with every *specific value* masked by default, and
 write reusable **map artifacts** (places, elements, selectors, secret
 references) that runtime adapters later consume.
@@ -14,8 +14,8 @@ automate anything in your own name, so long as it isn't surprising.
  (this repo)              (runtime lib)             (one per service)
  ───────────────         ───────────────           ───────────────
  map a site, masked,     consume the map,          ergonomic API over
- collaboratively  ─────▶ drive raw DOM,     ─────▶ a walled-garden web
- (LLM-safe)              headed/surfaceable        app (e.g. Acme)
+ collaboratively  ─────▶ drive raw DOM,     ─────▶ a web app you
+ (LLM-safe)              headed/surfaceable        already use (e.g. Acme)
 ```
 
 - **stencilwright** (this repo) — map a site *with an LLM collaborator* without
@@ -27,7 +27,7 @@ automate anything in your own name, so long as it isn't surprising.
   stencilwright binary stays raw-free when built with `-p stencilwright`
   (see [specs/02-apiwright.md](specs/02-apiwright.md)).
 - **adapters** (e.g. [adapter-example](https://github.com/stencilwright/adapter-example))
-  — turn one walled-garden web app into an easy local API.
+  — turn one web app you already use into a clean, browser-automation-backed API.
 
 ## Why a separate mapping tool?
 
@@ -64,15 +64,12 @@ Full workflow and artifact formats: [specs/01-stencil.md](specs/01-stencil.md).
 
 ## Status
 
-Extracted (copied) from a private monorepo where the harness reached its eighth
-checkpoint: end-to-end Example mapping from a blank profile, masked captures with
-verified zero PII leakage, and the native unmask-approval cycle exercised.
-
-Since then: the masker was hardened to default-deny **content-bearing
-attributes** (`aria-label`, `title`, `data-stringify-text`, … — a leak class
-found while mapping Acme), and the first real adapter,
-[adapter-example](https://github.com/stencilwright/adapter-example), searches Acme
-end-to-end. Open follow-ups: [issues](https://github.com/stencilwright/stencilwright/issues).
+Example maps end-to-end from a blank profile — masked captures with verified zero
+PII leakage, and the native unmask-approval cycle exercised. Since then the
+masker was hardened to default-deny **content-bearing attributes** (`aria-label`,
+`title`, `data-stringify-text`, … — a leak class found while mapping Acme), and
+the first adapter, [adapter-example](https://github.com/stencilwright/adapter-example),
+works end-to-end. Open follow-ups: [issues](https://github.com/stencilwright/stencilwright/issues).
 
 ## License
 

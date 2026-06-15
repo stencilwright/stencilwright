@@ -1,6 +1,6 @@
 # stencilwright — working notes for agents
 
-`stencilwright` is a privacy-preserving web-mapping harness. An LLM uses it to
+`stencilwright` is a privacy-preserving structure-mapping harness. An LLM uses it to
 map authenticated web apps **without ever seeing the user's specific real
 values**. Read [specs/01-stencil.md](specs/01-stencil.md) before proposing
 architectural changes; also see
