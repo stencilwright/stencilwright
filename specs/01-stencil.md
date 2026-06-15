@@ -10,7 +10,7 @@ layer.
 ## 1. Goal
 
 A Rust workspace that lets a developer (or an LLM collaborator)
-iteratively explore authenticated, private web pages without ever
+iteratively explore authenticated web pages without ever
 exposing the user's specific real values. The output of an exploration
 session is a set of reusable artifacts under
 `~/.stencilwright/<site>/`:
