@@ -260,6 +260,14 @@ async fn dispatch_op(state: &DaemonState, op: &str, args: Value) -> Result<Value
                 .context("locator(body).aria_snapshot")?;
             Ok(json!(yaml))
         }
+        "evaluate" => {
+            let EvaluateArgs { js } = parse_args(args)?;
+            let v: Value = page
+                .evaluate(&js, None::<&()>)
+                .await
+                .context("page.evaluate")?;
+            Ok(v)
+        }
         other => bail!("unknown op: {other}"),
     }
 }
@@ -356,6 +364,11 @@ struct TypeArgs {
 #[derive(Deserialize)]
 struct KeyArgs {
     key: String,
+}
+
+#[derive(Deserialize)]
+struct EvaluateArgs {
+    js: String,
 }
 
 #[derive(Deserialize)]

@@ -242,6 +242,14 @@ impl Page {
         serde_json::from_value(v).context("parse selector_attr_raw response")
     }
 
+    /// **Library-only**, behind the `raw` feature: evaluate JavaScript in the
+    /// page and return its JSON result. A broad capability (the result can carry
+    /// unmasked content), so it stays out of the masked binary.
+    #[cfg(feature = "raw")]
+    pub async fn evaluate(&self, js: &str) -> Result<Value> {
+        self.rpc("evaluate", json!({ "js": js })).await
+    }
+
     /// Fetch raw snippets and show the in-process approval dialog.
     ///
     /// Only the resulting decision crosses the crate boundary.

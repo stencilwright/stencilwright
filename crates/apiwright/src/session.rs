@@ -156,6 +156,24 @@ impl AdapterSession {
         self.page().wait_for(selector, timeout).await
     }
 
+    /// Full raw (unmasked) page HTML — for development and analysis. Adapters
+    /// pull specific data with [`Self::extract_text`] / [`Self::extract_attr`];
+    /// this is the whole document.
+    pub async fn dump_raw(&self) -> Result<String> {
+        Ok(self
+            .page()
+            .dump_raw(RawAccess::acknowledged())
+            .await?
+            .0)
+    }
+
+    /// Evaluate JavaScript in the page and return its JSON result. Raw — for
+    /// development/analysis (reading network timings, app state, or a direct
+    /// `fetch` against the site's own API).
+    pub async fn evaluate(&self, js: &str) -> Result<serde_json::Value> {
+        self.page().evaluate(js).await
+    }
+
     // --- interaction primitives ------------------------------------------
     // Adapters compose site-specific flows from these (e.g. Acme's
     // "type the query, then press Enter twice").
