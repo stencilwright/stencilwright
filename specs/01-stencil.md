@@ -935,7 +935,13 @@ provider during startup; `session start` only performs local browser /
 profile checks and spawns the daemon. The daemon contacts the provider
 on first use (`op item get`, `op item list`, or equivalent future
 provider calls), so any biometric or sign-in challenge belongs to the
-daemon-owned secret path. Multi-account setups should set
+daemon-owned secret path. In practice, the first daemon `op` call
+surfaces 1Password's "Allow `<binary>` to get CLI access" prompt
+(authorized via Touch ID + account selection); `<binary>` is the
+daemon-owning process — `stencilwright` when mapping, or an adapter's
+runtime binary when an adapter daemon is in use — confirming the
+challenge lands on the daemon, never the masked CLI. Multi-account
+setups should set
 `onepassword_account` in `site.toml`, usually via
 `stencilwright <site> config set --onepassword-account <account>`.
 The daemon passes that selector to `op` as `--account`. `OP_ACCOUNT`
