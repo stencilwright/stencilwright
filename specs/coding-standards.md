@@ -2,7 +2,7 @@
 
 Short, load-bearing conventions for this workspace. The privacy
 constraints in [`CLAUDE.md`](../CLAUDE.md) and the architectural
-specs in `specs/01-stencil.md` / `specs/02-positions-aggregator.md`
+specs in `specs/01-stencil.md`
 take precedence; this document covers code organization only.
 
 ## File size

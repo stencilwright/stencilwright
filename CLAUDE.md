@@ -4,9 +4,7 @@
 map authenticated web apps **without ever seeing the user's specific real
 values**. Read [specs/01-stencil.md](specs/01-stencil.md) before proposing
 architectural changes; also see
-[specs/coding-standards.md](specs/coding-standards.md),
-[specs/field-notes.md](specs/field-notes.md), and
-[specs/example-scenario-map.md](specs/example-scenario-map.md).
+[specs/coding-standards.md](specs/coding-standards.md).
 
 ## Non-negotiable constraints
 

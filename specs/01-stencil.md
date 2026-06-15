@@ -2,7 +2,6 @@
 
 Status: **draft**, ready to implement.
 
-Companion to [02-positions-aggregator.md](02-positions-aggregator.md).
 `stencilwright` is the foundational tooling built *before* any adapter.
 Production adapters (`apiwright`-shaped binaries like
 `adapterkit-example`) consume the mapping artifacts `stencilwright` produces
@@ -1094,8 +1093,6 @@ financial sites. Northwind is next.
 
 ## 11. Open questions / deferred
 
-> See also `specs/field-notes.md` for real-world findings from the
-> CP5 Example capture that informed several of these.
 
 0. **Attribute masking hardening.** Largely landed (§4 layer 6):
    identity-bearing attributes collapse to a whole-value slot, and
