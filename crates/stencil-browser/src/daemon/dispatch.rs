@@ -10,7 +10,6 @@ use std::sync::Arc;
 use anyhow::{Context, Result, bail};
 use playwright_rs::protocol::ClickOptions;
 use playwright_rs::protocol::page::Page as PwPage;
-use playwright_rs::protocol::wait_for::WaitForOptions;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::sync::Mutex;
@@ -161,12 +160,7 @@ async fn dispatch_op(state: &DaemonState, op: &str, args: Value) -> Result<Value
                 selector,
                 timeout_ms,
             } = parse_args(args)?;
-            let opts = WaitForOptions::builder().timeout(timeout_ms as f64).build();
-            page.locator(&selector)
-                .await
-                .wait_for(Some(opts))
-                .await
-                .context("locator.wait_for")?;
+            wait_for_any_match(page, &selector, timeout_ms).await?;
             Ok(Value::Null)
         }
         "url" => Ok(json!(page.url())),
@@ -313,6 +307,26 @@ async fn locator_visible_count(page: &PwPage, selector: &str) -> Result<usize> {
         }
     }
     Ok(visible)
+}
+
+async fn wait_for_any_match(page: &PwPage, selector: &str, timeout_ms: u64) -> Result<()> {
+    let timeout = std::time::Duration::from_millis(timeout_ms);
+    let deadline = tokio::time::Instant::now() + timeout;
+    loop {
+        let count = page
+            .locator(selector)
+            .await
+            .count()
+            .await
+            .with_context(|| format!("locator.count [selector: {selector}]"))?;
+        if count > 0 {
+            return Ok(());
+        }
+        if tokio::time::Instant::now() >= deadline {
+            bail!("timed out after {timeout_ms}ms waiting for selector: {selector}");
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
 }
 
 fn parse_args<T: for<'de> Deserialize<'de>>(args: Value) -> Result<T> {

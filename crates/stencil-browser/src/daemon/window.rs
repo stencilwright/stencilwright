@@ -100,7 +100,11 @@ async fn window_id_for_target(cdp: &playwright_rs::protocol::CDPSession) -> Resu
 }
 
 fn window_id_from_response(result: &Value) -> Result<i64> {
-    let Some(window_id) = result.get("windowId").and_then(Value::as_i64) else {
+    let window_id = result
+        .get("windowId")
+        .or_else(|| result.get("result").and_then(|result| result.get("windowId")))
+        .and_then(Value::as_i64);
+    let Some(window_id) = window_id else {
         bail!("Browser.getWindowForTarget returned no integer windowId: {result}");
     };
     Ok(window_id)
@@ -145,6 +149,10 @@ mod tests {
     fn window_id_from_response_requires_integer_window_id() {
         assert_eq!(
             window_id_from_response(&json!({ "windowId": 42 })).unwrap(),
+            42
+        );
+        assert_eq!(
+            window_id_from_response(&json!({ "result": { "windowId": 42 } })).unwrap(),
             42
         );
         assert!(window_id_from_response(&json!({ "windowId": "42" })).is_err());
