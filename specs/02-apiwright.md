@@ -77,16 +77,15 @@ Why off-screen and not headless: captcha solving, SSO/2FA, and ad-hoc oversight
 must remain possible at any moment. A window you can move on-screen preserves
 that; a headless context destroys it.
 
-### Off-screen mechanism (open question)
+### Off-screen mechanism
 
-Candidate implementations, in rough order of preference (see §7):
-- position the window at large negative coordinates / on an unused virtual
-  desktop, then re-position + focus to surface;
-- native minimize/hide then un-minimize;
-- a virtual display as a fallback.
-
-The chosen mechanism must support a fast, reliable *surface* that also brings
-the window to focus so the user can act (type a 2FA code, click a captcha).
+apiwright keeps a real headed Chrome process and positions its window off the
+visible desktop when [`Visibility::Offscreen`] is requested. Launch uses an
+off-screen `--window-position`, then the daemon verifies the window bounds via
+Chrome DevTools Protocol (CDP). If Chrome rejects off-screen bounds, the daemon
+falls back to minimizing the window. `surface()` restores a normal window,
+moves it on-screen, and focuses the active page so the user can act (type a 2FA
+code, click a captcha).
 
 ## 4. Session lifecycle
 
@@ -184,15 +183,14 @@ adapter depends on `apiwright` alone.
 
 ## 7. Open questions / deferred
 
-1. **Off-screen mechanism** (§3) — pick and validate one on macOS first.
-2. **Captcha / login recognition** — likely per-site (just another mapped
+1. **Captcha / login recognition** — likely per-site (just another mapped
    interactive place), with apiwright surfacing when such a place is recognized.
-3. **Consent checkpoints** — start with `maybe_surface(Consent)` called
+2. **Consent checkpoints** — start with `maybe_surface(Consent)` called
    explicitly by adapters; revisit a declarative ("confirm before this place")
    form later.
-4. **Action logging / audit trail** — a structured log of navigations and
+3. **Action logging / audit trail** — a structured log of navigations and
    extractions for after-the-fact review ("what did it do in my name?").
-5. **Map portability** — consume a `stencilwright export` bundle so adapters in
+4. **Map portability** — consume a `stencilwright export` bundle so adapters in
    other repos don't need a sibling stencilwright checkout.
-6. **Compile-impossible boundary** — revisit a separate-workspace split for
+5. **Compile-impossible boundary** — revisit a separate-workspace split for
    `apiwright` if it is ever published and widely depended upon (§2).

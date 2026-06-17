@@ -25,8 +25,45 @@ use super::session::{SessionInfo, write_session_atomic};
 use crate::rpc::{Request, Response};
 use crate::site_config;
 
+use super::window;
+
+/// How the daemon should present its real Chrome window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WindowPresentation {
+    /// Visible headed browser window.
+    #[default]
+    Headed,
+    /// Real headed browser window positioned away from the user's workspace.
+    Offscreen,
+}
+
+/// Daemon startup options.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct RunOptions {
+    pub presentation: WindowPresentation,
+}
+
+impl RunOptions {
+    pub fn headed() -> Self {
+        Self {
+            presentation: WindowPresentation::Headed,
+        }
+    }
+
+    pub fn offscreen() -> Self {
+        Self {
+            presentation: WindowPresentation::Offscreen,
+        }
+    }
+}
+
 /// Daemon entry point. Blocks (in the tokio runtime) until shutdown.
 pub async fn run(site_dir: PathBuf) -> Result<()> {
+    run_with_options(site_dir, RunOptions::default()).await
+}
+
+/// Daemon entry point with explicit startup options.
+pub async fn run_with_options(site_dir: PathBuf, options: RunOptions) -> Result<()> {
     // Detach from controlling terminal so the daemon survives the
     // launching shell. Errors are non-fatal: we may already be a
     // process-group leader (e.g. under launchd).
@@ -49,7 +86,7 @@ pub async fn run(site_dir: PathBuf) -> Result<()> {
         .await
         .context("playwright_rs::Playwright::launch() failed")?;
 
-    let opts = BrowserContextOptions::builder()
+    let mut opts = BrowserContextOptions::builder()
         .channel("chrome".into())
         .headless(false)
         // Keep Chrome's process sandbox ON. Playwright defaults chromium_sandbox
@@ -58,8 +95,13 @@ pub async fn run(site_dir: PathBuf) -> Result<()> {
         // desktop, where the sandbox works and is exactly what should be
         // isolating page renderers — so we opt back in.
         .chromium_sandbox(true)
-        .ignore_default_args(IgnoreDefaultArgs::Array(vec!["--enable-automation".into()]))
-        .build();
+        .ignore_default_args(IgnoreDefaultArgs::Array(vec!["--enable-automation".into()]));
+
+    if options.presentation == WindowPresentation::Offscreen {
+        opts = opts.args(window::offscreen_launch_args());
+    }
+
+    let opts = opts.build();
 
     let ctx = pw
         .chromium()
@@ -75,6 +117,12 @@ pub async fn run(site_dir: PathBuf) -> Result<()> {
             .context("opening initial Page failed")?,
     };
     let _ = page.goto("about:blank", None).await;
+
+    if options.presentation == WindowPresentation::Offscreen {
+        window::hide(&page)
+            .await
+            .context("positioning Chrome window off-screen")?;
+    }
 
     let sock_path = site_dir.join(".session.sock");
     let _ = fs::remove_file(&sock_path); // defensive — bind fails on EADDRINUSE

@@ -78,9 +78,22 @@ impl AdapterSession {
         let site_dir = paths::site_dir(&cfg.site);
         daemon::preflight(&site_dir)?;
         let spawn_dir = site_dir.clone();
-        let session = Session::attach(&site_dir, move || daemon::spawn(&spawn_dir))
+        let visibility = cfg.visibility;
+        let session = Session::attach(&site_dir, move || daemon::spawn(&spawn_dir, visibility))
             .await
             .context("attaching browser daemon")?;
+        match visibility {
+            Visibility::Headed => session
+                .page()
+                .surface_window()
+                .await
+                .context("surfacing headed browser window")?,
+            Visibility::Offscreen => session
+                .page()
+                .hide_window()
+                .await
+                .context("hiding off-screen browser window")?,
+        }
         Ok(Self {
             cfg,
             session,
@@ -209,9 +222,13 @@ impl AdapterSession {
     }
 
     /// Bring the live browser to a visible, focused window. Idempotent. Headed
-    /// by default → already visible; off-screen surfacing is deferred (spec 02
-    /// §7), so for the headed case this is currently a no-op.
+    /// by default is already visible, but this also corrects an existing daemon
+    /// that a previous off-screen run left hidden.
     pub async fn surface(&self) -> Result<()> {
+        self.page()
+            .surface_window()
+            .await
+            .context("surfacing browser window")?;
         Ok(())
     }
 

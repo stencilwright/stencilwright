@@ -22,9 +22,10 @@ mod dispatch;
 mod lifecycle;
 pub mod run;
 mod session;
+mod window;
 
 pub use lifecycle::ensure_running;
-pub use run::run;
+pub use run::{RunOptions, WindowPresentation, run, run_with_options};
 pub use session::{DaemonStatus, SessionInfo, live_socket, status, stop};
 
 /// Wall-clock seconds since Unix epoch. We store it in `.session` so

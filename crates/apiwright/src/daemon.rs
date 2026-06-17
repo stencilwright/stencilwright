@@ -13,8 +13,12 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use anyhow::{Context, Result, bail};
+use stencil_browser::daemon::{RunOptions, WindowPresentation};
+
+use crate::visibility::Visibility;
 
 const CHROME_APP_PATH: &str = "/Applications/Google Chrome.app";
+const OFFSCREEN_ARG: &str = "--offscreen";
 
 /// Call at the very top of `main`. If this process was re-exec'd as the session
 /// daemon (`<exe> daemon <site_dir>`), run it to completion and return
@@ -27,7 +31,8 @@ pub async fn run_if_daemon() -> Result<bool> {
     let dir = args
         .next()
         .context("`daemon` subcommand requires a site-directory argument")?;
-    stencil_browser::daemon::run(PathBuf::from(dir)).await?;
+    let options = parse_daemon_options(args)?;
+    stencil_browser::daemon::run_with_options(PathBuf::from(dir), options).await?;
     Ok(true)
 }
 
@@ -50,7 +55,7 @@ pub(crate) fn preflight(site_dir: &Path) -> Result<()> {
 /// `<exe> daemon <site_dir>`. Mirrors stencilwright's spawner; the daemon body
 /// calls `setsid` itself. `OP_SESSION*` is scrubbed so a caller's shell auth
 /// state isn't silently reused by the daemon-owned secret path.
-pub(crate) fn spawn(site_dir: &Path) -> Result<()> {
+pub(crate) fn spawn(site_dir: &Path, visibility: Visibility) -> Result<()> {
     let exe = std::env::current_exe().context("std::env::current_exe()")?;
     let site_abs = site_dir
         .canonicalize()
@@ -64,9 +69,11 @@ pub(crate) fn spawn(site_dir: &Path) -> Result<()> {
     let log2 = log.try_clone().context("cloning log file handle")?;
 
     let mut command = Command::new(&exe);
+    command.arg("daemon").arg(&site_abs);
+    if visibility == Visibility::Offscreen {
+        command.arg(OFFSCREEN_ARG);
+    }
     command
-        .arg("daemon")
-        .arg(&site_abs)
         .stdin(Stdio::null())
         .stdout(Stdio::from(log))
         .stderr(Stdio::from(log2));
@@ -79,4 +86,45 @@ pub(crate) fn spawn(site_dir: &Path) -> Result<()> {
         .spawn()
         .with_context(|| format!("spawning {} daemon {}", exe.display(), site_abs.display()))?;
     Ok(())
+}
+
+fn parse_daemon_options(args: impl IntoIterator<Item = std::ffi::OsString>) -> Result<RunOptions> {
+    let mut options = RunOptions::headed();
+    for arg in args {
+        let arg = arg
+            .to_str()
+            .with_context(|| format!("daemon option is not valid UTF-8: {arg:?}"))?;
+        match arg {
+            OFFSCREEN_ARG => {
+                options.presentation = WindowPresentation::Offscreen;
+            }
+            other => bail!("unknown daemon option: {other}"),
+        }
+    }
+    Ok(options)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsString;
+
+    use super::*;
+
+    #[test]
+    fn parse_daemon_options_defaults_to_headed() {
+        let options = parse_daemon_options(Vec::<OsString>::new()).unwrap();
+        assert_eq!(options, RunOptions::headed());
+    }
+
+    #[test]
+    fn parse_daemon_options_accepts_offscreen() {
+        let options = parse_daemon_options([OsString::from(OFFSCREEN_ARG)]).unwrap();
+        assert_eq!(options, RunOptions::offscreen());
+    }
+
+    #[test]
+    fn parse_daemon_options_rejects_unknown_flags() {
+        let err = parse_daemon_options([OsString::from("--headless")]).unwrap_err();
+        assert!(err.to_string().contains("unknown daemon option"));
+    }
 }

@@ -8,8 +8,8 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use playwright_rs::protocol::page::Page as PwPage;
 use playwright_rs::protocol::ClickOptions;
+use playwright_rs::protocol::page::Page as PwPage;
 use playwright_rs::protocol::wait_for::WaitForOptions;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -21,6 +21,8 @@ use crate::secrets::SecretResolver;
 use stencil_core::{Element, MaskConfig, Place, Signature, UnmaskApprovalContext, ValuesConfig};
 use stencil_mask::MaskPolicy;
 use stencil_secrets::OpConfig;
+
+use super::window;
 
 #[derive(Clone)]
 pub(super) struct DaemonState {
@@ -168,6 +170,16 @@ async fn dispatch_op(state: &DaemonState, op: &str, args: Value) -> Result<Value
             Ok(Value::Null)
         }
         "url" => Ok(json!(page.url())),
+        "hide_window" => {
+            window::hide(page).await.context("hide browser window")?;
+            Ok(Value::Null)
+        }
+        "surface_window" => {
+            window::surface(page)
+                .await
+                .context("surface browser window")?;
+            Ok(Value::Null)
+        }
         "locator_count" => {
             let SelectorArgs { selector } = parse_args(args)?;
             let n = page

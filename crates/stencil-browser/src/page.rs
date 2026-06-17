@@ -141,6 +141,16 @@ impl Page {
             .ok_or_else(|| anyhow!("daemon `url` op returned non-string: {v}"))
     }
 
+    pub async fn hide_window(&self) -> Result<()> {
+        self.rpc("hide_window", json!({})).await?;
+        Ok(())
+    }
+
+    pub async fn surface_window(&self) -> Result<()> {
+        self.rpc("surface_window", json!({})).await?;
+        Ok(())
+    }
+
     pub async fn url_template(&self, values: &ValuesConfig) -> Result<String> {
         let v = self
             .rpc("url_template", json!({ "values": values }))
